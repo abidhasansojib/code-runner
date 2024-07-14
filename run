@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+
+def compile_and_run_cpp(filename):
+    base_filename = os.path.splitext(os.path.basename(filename))[0]  # Extract base filename without extension
+
+    # Compile the C++ file using clang++
+    compile_command = f"g++ {filename} -o {base_filename}"
+    compile_process = subprocess.run(compile_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Check if compilation was successful
+    if compile_process.returncode != 0:
+        print(f"Compilation failed with error:\n{compile_process.stderr.decode('utf-8')}")
+        sys.exit(1)
+
+    # Move the executable to .cpp directory
+    cpp_directory = os.path.join(os.path.dirname(filename), ".cpp")
+    if not os.path.exists(cpp_directory):
+        os.makedirs(cpp_directory)
+
+    executable_path = os.path.join(cpp_directory, base_filename)
+    os.replace(base_filename, executable_path)
+
+    # Make the executable file executable
+    os.chmod(executable_path, 0o755)
+
+    # Run the compiled executable
+    run_command = f"./{executable_path}"
+    run_process = subprocess.run(run_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Print the output of the executable
+    if run_process.returncode == 0:
+        print(f"Output of '{filename}':\n{run_process.stdout.decode('utf-8')}")
+    else:
+        print(f"Execution failed with error:\n{run_process.stderr.decode('utf-8')}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: ./run <cpp_file>")
+        sys.exit(1)
+
+    cpp_filename = sys.argv[1]
+    compile_and_run_cpp(cpp_filename)
